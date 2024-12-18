@@ -1,0 +1,2 @@
+[app_servers]
+13.36.167.142 ansible_user=ubuntu ansible_ssh_private_key_file=/root/keys/my-terraform-key.pem

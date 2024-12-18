@@ -1,0 +1,61 @@
+---
+- name: Créer le répertoire pour Prometheus
+  file:
+    path: /opt/prometheus
+    state: directory
+    mode: '0755'
+
+- name: Vérifier si le port 9090 est libre (Prometheus)
+  shell: netstat -tuln | grep ":9090" || true
+  register: prometheus_port_check
+  failed_when: prometheus_port_check.stdout != ""
+  changed_when: false
+
+- name: Supprimer le conteneur Prometheus existant (s'il existe)
+  shell: >
+    docker ps -a -q -f name=prometheuscontainer | grep -q . && docker rm -f prometheuscontainer || true
+  ignore_errors: yes
+
+- name: Démarrer le conteneur Prometheus
+  shell: >
+    docker run -d --name prometheuscontainer
+    -e TZ=UTC
+    -p 9090:9090
+    ubuntu/prometheus:2.48.0-22.04_stable
+  register: prometheus_docker_run
+  failed_when: prometheus_docker_run.rc != 0
+
+- name: Afficher les erreurs de démarrage du conteneur Prometheus en cas d'échec
+  debug:
+    var: prometheus_docker_run.stderr
+  when: prometheus_docker_run.rc != 0
+
+- name: Créer le répertoire pour Grafana
+  file:
+    path: /opt/grafana
+    state: directory
+    mode: '0755'
+
+- name: Vérifier si le port 3000 est libre (Grafana)
+  shell: netstat -tuln | grep ":3000" || true
+  register: grafana_port_check
+  failed_when: grafana_port_check.stdout != ""
+  changed_when: false
+
+- name: Supprimer le conteneur Grafana existant (s'il existe)
+  shell: >
+    docker ps -a -q -f name=grafana_server | grep -q . && docker rm -f grafana_server || true
+  ignore_errors: yes
+
+- name: Démarrer le conteneur Grafana
+  shell: >
+    docker run -d --name=grafana_server
+    -p 3000:3000
+    grafana/grafana
+  register: grafana_docker_run
+  failed_when: grafana_docker_run.rc != 0
+
+- name: Afficher les erreurs de démarrage du conteneur Grafana en cas d'échec
+  debug:
+    var: grafana_docker_run.stderr
+  when: grafana_docker_run.rc != 0

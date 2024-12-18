@@ -1,0 +1,81 @@
+---
+- name: Vérifier que Docker est installé
+  command: docker --version
+  register: docker_installed
+  failed_when: docker_installed.rc != 0
+  changed_when: false
+
+- name: Vérifier que Docker est démarré
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Créer le répertoire pour MLflow
+  file:
+    path: /opt/mlflow
+    state: directory
+    mode: '0755'
+
+- name: Copier le fichier Dockerfile pour MLflow
+  copy:
+    src: Dockerfile
+    dest: /opt/mlflow/Dockerfile
+
+- name: Copier le fichier train.py sur la machine cible
+  copy:
+    src: "train.py"  # Chemin local
+    dest: "/opt/mlflow/train.py"        # Chemin distant
+    mode: '0644'
+
+- name: Construire l'image Docker pour MLflow
+  shell: docker build -t mlflow_server:2.1.1 .
+  args:
+    chdir: /opt/mlflow
+  register: docker_build
+  failed_when: docker_build.rc != 0
+
+- name: Afficher les erreurs de construction de l'image Docker si échec
+  debug:
+    var: docker_build.stderr
+  when: docker_build.rc != 0
+
+- name: Vérifier si le port 5000 est libre
+  shell: netstat -tuln | grep ":5000" || true
+  register: port_check
+  failed_when: port_check.stdout != ""  # Échoue uniquement si le port est occupé
+
+- name: Supprimer l'ancien conteneur MLflow s'il existe
+  shell: >
+    docker ps -a -q -f name=mlflow_server | grep -q . && docker rm -f mlflow_server || true
+
+- name: Démarrer le conteneur MLflow
+  shell: >
+    docker run -d --name mlflow_server
+    -p 5000:5000
+    -v /opt/mlflow:/mlflow
+    -e MLFLOW_TRACKING_URI=sqlite:////mlflow/mlflow.db
+    -e MLFLOW_ARTIFACT_ROOT=s3://mlflow-model-storage/mlflow/artifact
+    -e AWS_REGION=eu-west-3
+    -e ALPHA=0.7
+    -e L1_RATIO=0.3
+    mlflow_server:2.1.1
+  register: docker_run
+  failed_when: docker_run.rc != 0
+
+- name: Afficher les erreurs de démarrage du conteneur Docker si échec
+  debug:
+    var: docker_run.stderr
+  when: docker_run.rc != 0
+
+- name: Afficher les journaux Docker en cas d'échec
+  shell: docker logs mlflow_server
+  register: docker_logs
+  failed_when: false
+  when: docker_run.rc != 0
+
+- name: Vérifier si le conteneur MLflow est en cours d'exécution
+  shell: docker ps -q -f name=mlflow_server
+  register: mlflow_container
+  changed_when: false
+  failed_when: mlflow_container.stdout == ""

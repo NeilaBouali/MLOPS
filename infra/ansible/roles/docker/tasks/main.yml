@@ -1,0 +1,33 @@
+---
+- name: Mettre à jour la liste des paquets
+  apt:
+    update_cache: yes
+
+- name: Supprimer les packages en conflit
+  apt:
+    name:
+      - containerd
+      - containerd.io
+    state: absent
+
+- name: Installer Docker
+  apt:
+    name: docker.io
+    state: present
+
+- name: Ajouter l'utilisateur au groupe Docker
+  user:
+    name: ubuntu
+    groups: docker
+    append: yes
+
+- name: Activer Docker au démarrage
+  systemd:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Fixer les permissions du socket Docker
+  file:
+    path: /var/run/docker.sock
+    mode: '0666'

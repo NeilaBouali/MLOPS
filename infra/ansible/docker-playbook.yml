@@ -1,0 +1,8 @@
+---
+- hosts: app_servers
+  become: true
+  roles:
+    - docker
+    - mlflow
+    - monitoring
+
