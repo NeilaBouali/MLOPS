@@ -76,7 +76,7 @@ jobs:
 
       - name: Health check
         run: |
-          until curl -s http://13.38.51.28:5000; do
+          until curl -s http://13.36.167.142:5000; do
             echo "Waiting for the MLflow server to be available..."
             sleep 10
           done
