@@ -65,8 +65,8 @@ if __name__ == "__main__":
     np.random.seed(40)
 
     # Paramètres du bucket S3
-    bucket_name = "mlflow-model-storage"  # Remplacez par votre nom de bucket S3
-    file_key = "winequality-red.csv"  # Chemin du fichier dans le bucket
+    bucket_name = "mlflow-model-storage"  
+    file_key = "winequality-red.csv"  
 
     # Lire les données du bucket S3
     data = get_wine_data_from_s3(bucket_name, file_key)

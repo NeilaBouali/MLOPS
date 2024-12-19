@@ -1,35 +1,45 @@
 ---
-- name: Créer le répertoire pour Prometheus
+# Création des répertoires
+- name: Créer les répertoires nécessaires
   file:
-    path: /opt/prometheus
+    path: "{{ item }}"
     state: directory
     mode: '0755'
-
-- name: Vérifier si le port 9090 est libre (Prometheus)
-  shell: netstat -tuln | grep ":9090" || true
-  register: prometheus_port_check
-  failed_when: prometheus_port_check.stdout != ""
+  loop:
+    - "{{ prometheus_dir }}"
+ 
+# Vérification des ports
+- name: Vérifier la disponibilité des ports
+  shell: netstat -tuln | grep ":{{ item }}" || true
+  register: port_check
+  failed_when: port_check.stdout != ""
   changed_when: false
-
-- name: Supprimer le conteneur Prometheus existant (s'il existe)
-  shell: >
-    docker ps -a -q -f name=prometheuscontainer | grep -q . && docker rm -f prometheuscontainer || true
+  loop:
+    - "{{ containers.prometheus.port }}"
+    - "{{ containers.grafana.port }}"
+ 
+# Nettoyage des conteneurs existants
+- name: Supprimer les conteneurs existants
+  shell: docker rm -f {{ item.name }} || true
   ignore_errors: yes
-
+  loop:
+    - "{{ containers.prometheus }}"
+    - "{{ containers.grafana }}"
+ 
+# Déploiement des conteneurs
 - name: Démarrer le conteneur Prometheus
-  shell: >
-    docker run -d --name prometheuscontainer
-    -e TZ=UTC
-    -p 9090:9090
-    ubuntu/prometheus:2.48.0-22.04_stable
-  register: prometheus_docker_run
-  failed_when: prometheus_docker_run.rc != 0
-
-- name: Afficher les erreurs de démarrage du conteneur Prometheus en cas d'échec
-  debug:
-    var: prometheus_docker_run.stderr
-  when: prometheus_docker_run.rc != 0
-
+  docker_container:
+    name: "{{ containers.prometheus.name }}"
+    image: "{{ containers.prometheus.image }}"
+    state: started
+    ports:
+      - "{{ containers.prometheus.port }}:{{ containers.prometheus.port }}"
+    volumes:
+      - "{{ prometheus_dir }}:/etc/prometheus"
+    env:
+      TZ: UTC
+    restart_policy: unless-stopped
+ 
 - name: Créer le répertoire pour Grafana
   file:
     path: /opt/grafana
@@ -59,3 +69,20 @@
   debug:
     var: grafana_docker_run.stderr
   when: grafana_docker_run.rc != 0
+
+ 
+# Configuration Prometheus
+- name: Configurer Prometheus
+  copy:
+    dest: "{{ prometheus_dir }}/prometheus.yml"
+    content: |
+      global:
+        scrape_interval: 15s
+ 
+      scrape_configs:
+        - job_name: 'flask_api'
+          metrics_path: '/metrics'
+          static_configs:
+            - targets: ['127.0.0.1:5001']
+    mode: '0644'
+  notify: Restart Prometheus

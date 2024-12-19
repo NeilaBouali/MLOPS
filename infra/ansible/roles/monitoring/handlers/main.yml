@@ -1,0 +1,6 @@
+---
+- name: Restart Prometheus
+  docker_container:
+    name: "{{ containers.prometheus.name }}"
+    state: started
+    restart: yes

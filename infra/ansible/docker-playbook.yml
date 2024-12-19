@@ -1,8 +1,33 @@
 ---
-- hosts: app_servers
+- name: Déployer les services Docker (Prometheus, Grafana, API Flask)
+  hosts: app_servers
   become: true
-  roles:
-    - docker
-    - mlflow
-    - monitoring
+  vars:
+    # Répertoires pour Prometheus et Grafana
+    prometheus_dir: /opt/prometheus
+    grafana_dir: /opt/grafana
 
+    # Variables pour les conteneurs Docker
+    containers:
+      prometheus:
+        name: prometheuscontainer
+        image: prom/prometheus
+        port: 9090
+      grafana:
+        name: grafana_server
+        image: grafana/grafana
+        port: 3000
+      flask_api:
+        name: flask-api
+        image: flask-api
+        port: 5001
+
+    # MLFlow configuration
+    mlflow_tracking_uri: "http://15.237.37.51:5000"
+    run_id: "77242a872ff44c00b12cc5a9a958c48f"  # Exemple de Run_ID
+
+  roles:
+    - docker  # Role pour gérer Docker et ses conteneurs
+    - mlflow  # Role pour gérer MLflow
+    - monitoring  # Role pour gérer Prometheus et Grafana
+    - api  # Role pour gérer l'API Flask
