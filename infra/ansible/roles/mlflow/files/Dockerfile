@@ -18,7 +18,7 @@ ENV ALPHA=0.5
 ENV L1_RATIO=0.5
 
 # Copier le script train.py dans l'image
-COPY train.py /opt/mlflow/train.py
+COPY infra/ansible/roles/mlflow/files/train.py /opt/mlflow/train.py
 
 # Définir le point d'entrée du conteneur
 CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
