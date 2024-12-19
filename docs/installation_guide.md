@@ -1,35 +1,44 @@
-# Création et Configuration de l'Infrastructure
+# Création et Configuration de l’Infrastructure
 
-## Étape 1: Création de l'Infrastructure avec Terraform
+Ce document décrit les étapes nécessaires pour créer et configurer votre infrastructure à l’aide de Terraform et Ansible.
 
-1. **Initialiser Terraform :**
+## Prérequis
+
+- **Terraform** installé sur votre machine
+- **Ansible** installé sur votre machine
+- Une clé SSH pour accéder à l’instance distante (fichier `.pem`)
+
+## Étape 1 : Création de l’Infrastructure avec Terraform
+
+1. Initialiser le répertoire Terraform :
    ```bash
    terraform init
-Valider la configuration :
 
+Cette commande télécharge et installe les plugins nécessaires.
+
+Valider la configuration Terraform
 bash
 Copier le code
 terraform validate
-Vérifier le plan d'exécution :
-
+Planifier l’exécution
 bash
 Copier le code
 terraform plan
-Appliquer les changements :
-
+Appliquer les changements
 bash
 Copier le code
 terraform apply -auto-approve
-Étape 2: Configuration d'Ansible
-Tester l'Inventory
-Testons la connexion à l'inventaire avec Ansible pour vérifier que tout fonctionne correctement.
+À la fin de cette étape, vous devriez avoir une ou plusieurs instances déployées et prêtes à être configurées.
+
+Étape 2 : Configuration de l’Infrastructure avec Ansible
+Tester l’inventaire Ansible
+Vérifiez que les hôtes dans votre inventaire inventory/hosts sont accessibles :
 
 bash
 Copier le code
 ansible -i inventory/hosts all -m ping
-Sortie attendue :
-
-ruby
+Exemple de sortie
+text
 Copier le code
 51.44.166.214 | SUCCESS => {
     "ansible_facts": {
@@ -38,39 +47,35 @@ Copier le code
     "changed": false,
     "ping": "pong"
 }
-Exécution du Playbook
-Pour exécuter le playbook Ansible, utilisez la commande suivante :
+Exécution du Playbook Docker
+Pour installer et configurer Docker sur vos instances :
 
 bash
 Copier le code
 ansible-playbook -i inventory/hosts docker-playbook.yml
-Connexion à l'Instance
-Pour se connecter à l'instance via SSH, utilisez la commande suivante :
+Connexion à l’Instance
+Pour vous connecter à l’instance (exemple d’adresse IP) :
 
 bash
 Copier le code
 ssh -i /root/keys/my-terraform-key.pem ubuntu@13.36.167.142
-Vérification de la Version de Docker
-Pour vérifier la version de Docker, utilisez la commande suivante :
+Vérifiez la version de Docker :
 
 bash
 Copier le code
 docker --version
-Sortie attendue :
-
-ruby
+Exemple de sortie
+text
 Copier le code
-ubuntu@ip-172-31-12-77:~$ docker --version
 Docker version 26.1.3, build 26.1.3-0ubuntu1~24.04.1
-Exécution de Commande via Ansible
-Pour exécuter un script Python via Ansible, utilisez la commande suivante :
+Lancement de Scripts Python via Ansible
+Pour exécuter un script Python (ex: train.py) sur l’instance :
 
 bash
 Copier le code
-ansible all -i <votre_inventory> -u ubuntu -b -m command -a "python3 /opt/mlflow/train.py"
-Ou, pour exécuter le playbook :
+ansible all -i inventory/hosts -u ubuntu -b -m command -a "python3 /opt/mlflow/train.py"
+Ou avec un playbook :
 
 bash
 Copier le code
-ansible-playbook -i inventory/hosts -u ubuntu -b -m command -a "python3 /opt/
-
+ansible-playbook -i inventory/hosts -u ubuntu -b -m command -a "python3 /opt/mlflow/train.py"
