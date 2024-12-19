@@ -1,0 +1,7 @@
+flask
+fastapi
+mlflow
+pytest
+scikit-learn
+pandas
+boto3
