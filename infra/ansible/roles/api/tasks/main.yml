@@ -1,0 +1,78 @@
+---
+- name: Déployer l'application Flask via Docker
+  hosts: localhost
+  become: true
+  vars:
+    flask_dir: /opt/flask_api
+    docker_image_name: flask-api
+    flask_port: 5001
+    mlflow_tracking_uri: "http://15.237.37.51:5000"  
+    run_id: "77242a872ff44c00b12cc5a9a958c48f" 
+
+
+- name: Créer le répertoire pour l'application Flask
+    file:
+      path: "{{ flask_dir }}"
+      state: directory
+      mode: '0755'
+
+
+- name: Copier le Dockerfile pour Flask
+    copy:
+      src: "roles/api/files/Dockerfile"
+      dest: "{{ flask_dir }}/Dockerfile"
+      mode: '0644'
+
+
+  - name: Copier le fichier api.py pour Flask
+    copy:
+      src: "./api.py"
+      dest: "{{ flask_dir }}/api.py"
+      mode: '0644'
+
+
+  - name: Copier le fichier requirements.txt pour Flask
+    copy:
+      src: "./requirements.txt"
+      dest: "{{ flask_dir }}/requirements.txt"
+      mode: '0644'
+
+
+  - name: Construire l'image Docker pour Flask
+    shell: docker build -t {{ docker_image_name }} .
+    args:
+      chdir: "{{ flask_dir }}"
+    register: docker_build
+    failed_when: docker_build.rc != 0
+
+
+  - name: Démarrer le conteneur Docker pour Flask
+    shell: docker run -d -p {{ flask_port }}:5001 --name flask-api {{ docker_image_name }}
+    register: flask_container
+    failed_when: flask_container.rc != 0
+
+  - name: Vérifier si le conteneur Flask fonctionne
+    command: docker ps -q -f name=flask-api
+    register: flask_container_status
+    failed_when: flask_container_status.stdout == ""
+
+
+  - name: Configurer Prometheus pour scruter l'API Flask
+    copy:
+      dest: "/opt/prometheus/prometheus.yml"
+      content: |
+        global:
+          scrape_interval: 15s
+
+        scrape_configs:
+          - job_name: 'flask_api'
+            metrics_path: '/metrics'
+            static_configs:
+              - targets: ['http://15.237.37.51:5001']  # Scruter Flask
+      mode: '0644'
+    notify: Restart Prometheus
+
+  # Redémarrer Prometheus après avoir mis à jour la configuration
+  - name: Restart Prometheus
+    shell: docker restart prometheuscontainer
+    when: prometheus_container is defined

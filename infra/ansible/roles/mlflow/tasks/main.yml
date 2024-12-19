@@ -17,15 +17,24 @@
     state: directory
     mode: '0755'
 
+- name: Définir le chemin local du Dockerfile pour MLflow
+  set_fact:
+    dockerfile_src_mlflow: "/mnt/c/Users/neila/OneDrive/Bureau/Documents/EFREI/ML OPS/Projet2/infra/ansible/roles/mlflow/files/Dockerfile"
+
 - name: Copier le fichier Dockerfile pour MLflow
   copy:
-    src: Dockerfile
+    src: "{{ dockerfile_src_mlflow }}"
     dest: /opt/mlflow/Dockerfile
+    mode: '0644'
+
+- name: Définir le chemin de base pour les fichiers locaux MLflow
+  set_fact:
+    base_path_mlflow: "/mnt/c/Users/neila/OneDrive/Bureau/Documents/EFREI/ML OPS/Projet2/infra/ansible/roles/mlflow/files"
 
 - name: Copier le fichier train.py sur la machine cible
   copy:
-    src: "train.py"  # Chemin local
-    dest: "/opt/mlflow/train.py"        # Chemin distant
+    src: "{{ base_path_mlflow }}/train.py"   # Chemin local
+    dest: "/opt/mlflow/train.py"   # Chemin distant
     mode: '0644'
 
 - name: Construire l'image Docker pour MLflow
@@ -54,14 +63,16 @@
     docker run -d --name mlflow_server
     -p 5000:5000
     -v /opt/mlflow:/mlflow
-    -e MLFLOW_TRACKING_URI=sqlite:////mlflow/mlflow.db
+    -e MLFLOW_TRACKING_URI=http://15.237.37.51:5000
     -e MLFLOW_ARTIFACT_ROOT=s3://mlflow-model-storage/mlflow/artifact
     -e AWS_REGION=eu-west-3
+    -e AWS_ACCESS_KEY_ID=AKIAS2VS4LQOMIG5DUUY
+    -e AWS_SECRET_ACCESS_KEY=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
     -e ALPHA=0.7
     -e L1_RATIO=0.3
     mlflow_server:2.1.1
-  register: docker_run
-  failed_when: docker_run.rc != 0
+  register: docker_run_mlflow
+  failed_when: docker_run_mlflow.rc != 0
 
 - name: Afficher les erreurs de démarrage du conteneur Docker si échec
   debug:
