@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
 
     # Configuration de l'URI de suivi MLflow
-    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://13.36.167.142:5000")
+    mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "http://15.237.37.51:5000")
     mlflow.set_tracking_uri(mlflow_tracking_uri)
     print("MLflow Tracking URI :", mlflow.get_tracking_uri())
 

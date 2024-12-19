@@ -76,14 +76,14 @@
 
 - name: Afficher les erreurs de démarrage du conteneur Docker si échec
   debug:
-    var: docker_run.stderr
-  when: docker_run.rc != 0
+    var: docker_run_mlflow.stderr
+  when: docker_run_mlflow.rc != 0
 
 - name: Afficher les journaux Docker en cas d'échec
   shell: docker logs mlflow_server
   register: docker_logs
   failed_when: false
-  when: docker_run.rc != 0
+  when: docker_run_mlflow.rc != 0
 
 - name: Vérifier si le conteneur MLflow est en cours d'exécution
   shell: docker ps -q -f name=mlflow_server
