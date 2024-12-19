@@ -41,7 +41,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/mlflow-train:latest .
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/mlflow-train:latest -f infra/ansible/roles/mlflow/files/Dockerfile .
 
       - name: Push Docker image
         run: |
