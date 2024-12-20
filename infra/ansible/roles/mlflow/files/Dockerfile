@@ -17,7 +17,7 @@ ENV MLFLOW_TRACKING_URI="http://15.237.37.51:5000"
 ENV MLFLOW_S3_ENDPOINT_URL="https://mlflow-model-storage.s3.eu-west-3.amazonaws.com/Mlflow_endpoint/"
 
 # Copier le script train.py dans l'image
-COPY train.py /opt/mlflow/train.py
+COPY infra/ansible/roles/mlflow/files/train.py /opt/mlflow/train.py
 
 # Définir le point d'entrée du conteneur
 CMD ["mlflow", "server", "--host", "0.0.0.0", "--port", "5000"]
